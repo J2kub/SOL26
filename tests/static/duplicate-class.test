@@ -1,0 +1,32 @@
++++ ERRORS
+*** Duplicate class Main  
+!I! 35
+1
+
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26">
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="_"/>
+          <expr>
+            <literal class="String" value="dup1"/>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="_"/>
+          <expr>
+            <literal class="String" value="dup2"/>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

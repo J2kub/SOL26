@@ -6,7 +6,6 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 
 import {
   CategoryReport,
@@ -22,15 +21,11 @@ import {
 // Paths to external tools
 // ------------------------------------------------------------------
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const INT_DIR = path.resolve(__dirname, "../../../python/int");
-const VENV_PYTHON = path.join(INT_DIR, ".venv", "bin", "python3");
-const SOLINT_SCRIPT = path.join(INT_DIR, "src", "solint.py");
+const INT_DIR = "/int";
+const SOLINT_SCRIPT = path.join("/int", "src", "solint.py");
 
-const INTERPRETER_CMD = process.env["SOL_INTERPRETER"] ?? VENV_PYTHON;
-const INTERPRETER_ARGS = process.env["SOL_INTERPRETER_ARGS"]?.split(" ") ?? [
-  SOLINT_SCRIPT, // ← zmeň z "-m solint" na cestu k skriptu
-];
+const INTERPRETER_CMD = process.env["SOL_INTERPRETER"] ?? "python";
+const INTERPRETER_ARGS = process.env["SOL_INTERPRETER_ARGS"]?.split(" ") ?? [SOLINT_SCRIPT];
 const SOL2XML_CMD = process.env["SOL2XML"] ?? "sol2xml";
 
 // ------------------------------------------------------------------
@@ -50,17 +45,24 @@ function runProcess(
     input: stdinContent,
     timeout: timeoutMs,
     maxBuffer: 10 * 1024 * 1024,
-    cwd: cwd,
+    cwd,
     env: {
       ...process.env,
       PYTHONPATH: path.join(INT_DIR, "src"),
     },
   });
 
+  const stdout = result.stdout?.toString("utf-8") ?? "";
+  let stderr = result.stderr?.toString("utf-8") ?? "";
+
+  if (result.error) {
+    stderr += (stderr ? "\n" : "") + `spawn error: ${result.error.message}`;
+  }
+
   return {
     code: result.status ?? 1,
-    stdout: result.stdout?.toString("utf-8") ?? "",
-    stderr: result.stderr?.toString("utf-8") ?? "",
+    stdout,
+    stderr,
   };
 }
 
@@ -151,12 +153,20 @@ function runSingleTest(test: TestCaseDefinition): TestCaseReport | UnexecutedRea
       return new UnexecutedReason(UnexecutedReasonCode.OTHER, "No XML file to interpret");
     }
 
-   const interpResult = runProcess(
-     INTERPRETER_CMD,
-     [...INTERPRETER_ARGS, "--source", xmlPath],
-     test.stdin_file,
-     INT_DIR
-   );
+    console.error(
+      `[DEBUG] Running interpreter: ${INTERPRETER_CMD} ${[...INTERPRETER_ARGS, xmlPath].join(" ")}`
+    );
+
+    const interpResult = runProcess(
+      INTERPRETER_CMD,
+      [...INTERPRETER_ARGS, xmlPath],
+      test.stdin_file,
+      "/int/src"
+    );
+
+    console.error(
+      `[DEBUG] Interpreter result: code=${interpResult.code}, stderr="${interpResult.stderr.substring(0, 200)}"`
+    );
 
     const interpCode = interpResult.code;
     const interpStdout = interpResult.stdout;

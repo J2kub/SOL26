@@ -1,0 +1,63 @@
+# Static analysis test cases
+# Expected: static errors before interpreter execution
+
+=== duplicate-class ===
+<program>
+  <class name="Main">
+    <method name="run">
+      <print>
+        <literal type="string">Duplicate class test</literal>
+      </print>
+    </method>
+  </class>
+  <class name="Main">
+    <method name="run">
+      <print>
+        <literal type="string">Duplicate!</literal>
+      </print>
+    </method>
+  </class>
+</program>
+# Expected static error: SEM_REDEF (duplicate class Main)
+
+=== undefined-method ===
+<program>
+  <class name="Main">
+    <method name="run">
+      <send receiver="self" selector="missingMethod">
+      </send>
+    </method>
+  </class>
+</program>
+# Expected static error: SEM_UNDEF (undefined method missingMethod)
+
+=== attribute-shadow ===
+<program>
+  <class name="Main">
+    <instance-var name="print"/>
+    <method name="run">
+      <print>
+        <literal type="string">Shadow test</literal>
+      </print>
+    </method>
+  </class>
+</program>
+# Expected static error: SEM_ATTR (attribute print collides with method)
+
+=== invalid-xml ===
+<program>
+  <invalid>bad xml</invalid>
+</program>
+# Expected static error: INT_XML
+
+=== no-main ===
+<program>
+  <class name="Other">
+    <method name="run">
+      <print>
+        <literal type="string">No Main</literal>
+      </print>
+    </method>
+  </class>
+</program>
+# Expected static error: SEM_NO_MAIN or INT_NO_MAIN

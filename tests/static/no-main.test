@@ -1,0 +1,20 @@
++++ ERRORS
+*** No Main class
+!I! 31
+1
+
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26">
+  <class name="Other" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="_"/>
+          <expr>
+            <literal class="String" value="no main"/>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

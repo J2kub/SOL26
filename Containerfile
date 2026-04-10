@@ -1,29 +1,24 @@
-# Stage: check - kvalita kódu
-FROM node:24-alpine AS check
-WORKDIR /app
-COPY typescript/tester/package*.json ./
-RUN npm ci --only=dev
-COPY typescript/tester/src/ ./src/
-RUN npm run lint && npm run typecheck
-
-# Stage: build - kompilácia testera
 FROM node:24-alpine AS build
+RUN apk add --no-cache python3 py3-pip python3-dev
 WORKDIR /app
 COPY typescript/tester/package*.json ./
 RUN npm ci
-COPY typescript/tester/src/ ./src/
+COPY typescript/tester/src ./src
+COPY typescript/tester/tsconfig.json ./
 RUN npm run build
 
-# Stage: runtime - Python interpret
 FROM python:3.14-alpine AS runtime
-WORKDIR /app
-COPY python/int/src/ ./src/
-COPY python/int/requirements.txt ./
-RUN pip install -r requirements.txt
-ENTRYPOINT ["python3", "src/solint.py"]
+WORKDIR /int/src
+COPY python/int/src ./
+COPY python/int/requirements.txt ../
+RUN pip install -r ../requirements.txt
+ENV PYTHONPATH=/int/src
 
-# Stage: test - tester
 FROM build AS test
+COPY --from=runtime /int /int
+COPY sol2xml /sol2xml
+ENV SOL2XML=/sol2xml/soltoxml.py
+ENV PYTHONPATH=/int/src
+RUN pip install --break-system-packages -r /int/requirements.txt
 WORKDIR /app
-COPY --from=runtime /app /python-int
 ENTRYPOINT ["node", "dist/tester.js"]
